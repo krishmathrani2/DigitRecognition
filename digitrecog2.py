@@ -8,17 +8,13 @@ from PIL.Image import Resampling
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.callbacks import EarlyStopping
 
-# Load the digits dataset
 digits = load_digits()
 X, y = digits.data, digits.target
 
-# Reshape X to 8x8 images and normalize
 X = X.reshape((len(X), 8, 8, 1)) / 16.0
 
-# Split the data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Data augmentation
 datagen = ImageDataGenerator(
     rotation_range=15,
     width_shift_range=0.1,
@@ -28,7 +24,6 @@ datagen = ImageDataGenerator(
 )
 datagen.fit(X_train)
 
-# Create a CNN model
 model = tf.keras.models.Sequential([
     tf.keras.layers.Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(8, 8, 1)),
     tf.keras.layers.MaxPooling2D((2, 2)),
@@ -42,10 +37,8 @@ model = tf.keras.models.Sequential([
 
 model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
-# Add EarlyStopping to prevent overfitting
 early_stopping = EarlyStopping(monitor='val_loss', patience=3, restore_best_weights=True)
 
-# Data augmentation
 datagen = ImageDataGenerator(
     rotation_range=15,
     width_shift_range=0.1,
@@ -58,7 +51,6 @@ datagen.fit(X_train)
 model.fit(datagen.flow(X_train, y_train, batch_size=32), epochs=20, validation_data=(X_test, y_test))
 
 
-# Function to preprocess the image with thresholding
 
 def preprocess_image(image, threshold=127):  
     image = image.resize((8, 8), Resampling.LANCZOS)
@@ -67,14 +59,13 @@ def preprocess_image(image, threshold=127):
     image_arr = np.where(image_arr > threshold, 0, 1) 
     return image_arr.reshape(1, 8, 8, 1)
 
-# Function to predict the digit
 def predict_digit(image):
-    image = image.convert("L") # Convert image to grayscale before processing
+    image = image.convert("L") 
     processed_image = preprocess_image(image)
     prediction = model.predict(processed_image)
     return np.argmax(prediction)
 
-# GUI for drawing and predicting digits
+
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -97,11 +88,9 @@ class App(tk.Tk):
         self.draw = ImageDraw.Draw(self.image)
 
     def paint(self, event):
-        # Get the coordinates of the mouse click or drag
         x1, y1 = (event.x - 5), (event.y - 5)  
         x2, y2 = (event.x + 5), (event.y + 5)
-        # Store the coordinates
-        self.line_width = 10  # Set line width
+        self.line_width = 10 
         self.canvas.create_line(x1, y1, x2, y2, fill="black", width=self.line_width)
         self.draw.line([x1, y1, x2, y2], fill="black", width=self.line_width)
 
@@ -113,17 +102,15 @@ class App(tk.Tk):
         prediction = predict_digit(self.image)
         self.show_prediction(prediction)
 
-    # In the show_prediction method (for visualization):
     def show_prediction(self, prediction):
         result_window = tk.Toplevel(self)
         result_window.title("Prediction")
 
-        # Display the preprocessed image
         processed_image = preprocess_image(self.image)
         processed_image_pil = Image.fromarray((processed_image.reshape(8, 8) * 255).astype(np.uint8))
-        processed_image_tk = ImageTk.PhotoImage(processed_image_pil)  # Now ImageTk is available
+        processed_image_tk = ImageTk.PhotoImage(processed_image_pil)
         label_image = tk.Label(result_window, image=processed_image_tk)
-        label_image.image = processed_image_tk  # Keep a reference
+        label_image.image = processed_image_tk  
         label_image.pack()
 
         tk.Label(result_window, text=f"Predicted Digit: {prediction}", font=("Helvetica", 24)).pack()
